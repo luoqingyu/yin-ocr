@@ -31,11 +31,11 @@ def train(train_dir=None, val_dir=None, mode='train'):
     #开始构建图
     model.build_graph()
     print('loading train data, please wait---------------------')
-    train_feeder = utils.DataIterator(data_dir=train_dir)
+    train_feeder = utils.DataIterator(data_dir=train_dir,num=4000000)
     print('get image: ', train_feeder.size)
 
     print('loading validation data, please wait---------------------')
-    val_feeder = utils.DataIterator(data_dir=val_dir,istrain=False)
+    val_feeder = utils.DataIterator(data_dir=val_dir,num=40000)
     print('get image: ', val_feeder.size)
 
     num_train_samples = train_feeder.size  
@@ -67,6 +67,7 @@ def train(train_dir=None, val_dir=None, mode='train'):
 
             print('=============================begin training=============================')
             accuracy_res = []
+            accuracy_per_res = []
             epoch_res = []
             tmp_max = 0
             tmp_epoch = 0
@@ -116,6 +117,7 @@ def train(train_dir=None, val_dir=None, mode='train'):
                     # do validation
                     if step % FLAGS.validation_steps == 0:
                         acc_batch_total = 0
+                        acc_per_batch_total = 0
                         lastbatch_err = 0
                         lr = 0
                         for j in range(num_batches_per_epoch_val):
@@ -135,13 +137,24 @@ def train(train_dir=None, val_dir=None, mode='train'):
                             ori_labels = val_feeder.the_label(indexs_val)
                             acc = utils.accuracy_calculation(ori_labels, dense_decoded,
                                                              ignore_value=-1, isPrint=True)
+
+                            acc_per = utils.accuracy_calculation_single(ori_labels, dense_decoded,
+                                                             ignore_value=-1, isPrint=True)
+
+                            acc_per_batch_total += acc_per
                             acc_batch_total += acc
+
+                        accuracy_per = (acc_per_batch_total * FLAGS.batch_size) / num_val_samples
                         accuracy = (acc_batch_total * FLAGS.batch_size) / num_val_samples
+                        
+                        accuracy_per_res.append(accuracy_per)
                         accuracy_res.append(accuracy)
+
                         epoch_res.append(cur_epoch)
-                        if accuracy > tmp_max:
+                        if accuracy_per > tmp_max:
                             tmp_max = accuracy
                             tmp_epoch = cur_epoch
+
                         avg_train_cost = train_cost / ((cur_batch + 1) * FLAGS.batch_size)
 
                         # train_err /= num_train_samples
@@ -150,7 +163,7 @@ def train(train_dir=None, val_dir=None, mode='train'):
                               "max_accuracy = {:.3f},max_Epoch {},accuracy = {:.3f},acc_batch_total = {:.3f},avg_train_cost = {:.3f}, " \
                               " time = {:.3f},lr={:.8f}"
                         print(log.format(now.month, now.day, now.hour, now.minute, now.second,
-                                         cur_epoch + 1, FLAGS.num_epochs, tmp_max,tmp_epoch, accuracy,acc_batch_total,avg_train_cost,
+                                         cur_epoch + 1, FLAGS.num_epochs, tmp_max,tmp_epoch, accuracy_per,acc_batch_total,avg_train_cost,
                                          time.time() - start_time, lr))
 
 

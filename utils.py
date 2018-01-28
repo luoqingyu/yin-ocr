@@ -26,7 +26,7 @@ tf.app.flags.DEFINE_integer('image_channel', 1, 'image channels as input')
 tf.app.flags.DEFINE_integer('max_stepsize', 16, 'max stepsize in lstm, as well as '                                             'the output channels of last layer in CNN')
 tf.app.flags.DEFINE_integer('num_hidden', 256, 'number of hidden units in lstm')
 tf.app.flags.DEFINE_integer('num_epochs', 10000, 'maximum epochs')
-tf.app.flags.DEFINE_integer('batch_size', 128, 'the batch_size')
+tf.app.flags.DEFINE_integer('batch_size', 2, 'the batch_size')
 tf.app.flags.DEFINE_integer('save_steps', 1000, 'the step to save checkpoint')
 tf.app.flags.DEFINE_integer('validation_steps', 500, 'the step to validation')
 tf.app.flags.DEFINE_float('decay_rate', 0.98, 'the lr decay rate')
@@ -35,8 +35,8 @@ tf.app.flags.DEFINE_float('beta2', 0.999, 'adam parameter beta2')
 tf.app.flags.DEFINE_integer('decay_steps', 10000, 'the lr decay_step for optimizer')
 tf.app.flags.DEFINE_float('momentum', 0.9, 'the momentum')
 
-tf.app.flags.DEFINE_string('train_dir','./data/', 'the train data dir')
-tf.app.flags.DEFINE_string('val_dir','./data/', 'the val data dir')
+tf.app.flags.DEFINE_string('train_dir','../data/annotation_train.txt', 'the train data dir')
+tf.app.flags.DEFINE_string('val_dir','../data/annotation_val.txt', 'the val data dir')
 
 tf.app.flags.DEFINE_string('mode', 'train', 'train, val or infer')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'num of gpus')
@@ -62,46 +62,75 @@ encode_maps[''] = 0
 decode_maps[0] = ''
 
 # 所有类 + blank + space
-num_classes = i+1+1
+num_classes = i + 1
 print("num_classes:", num_classes)
 class DataIterator:
-    def __init__(self, data_dir,istrain=True):
+    def __init__(self, data_dir, num):
         self.image = []
         self.labels = []
-        if istrain:
-            i=0
-            for root, sub_folder, file_list in os.walk(data_dir):
-                for file_path in file_list:
+        i = 0
+        with open(data_dir) as f:
+            for u in f.readlines():
+                if i < num:
+                    now_path = "../data" + u.split(" ")[0][1:]
+                    label = now_path.split("_")[1]
+                    im = io.imread(now_path,as_grey=True)
+                    h = im.shape[0]
+                    l = im.shape[1]
+                    add = np.zeros((h,FLAGS.image_width-l)) + im[-1][-1]
+                    im = np.concatenate((im,add),axis = 1)
+                    im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
+                    self.image.append(im)
+                    label = [encode_maps[c] for c in list(label)]
+                    self.labels.append(label)
+                    print(label)
                     i+=1
-                    if i%5 != 0:
-                        image_name = os.path.join(root, file_path)
-                        if os.path.exists(image_name):
-                            try:
-                                im = io.imread(image_name,as_grey=True)
-                                im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
-                                self.image.append(im)
-                                code = image_name.split('/')[-1].split('.')[-2]
-                                code = [encode_maps[c] for c in list(code)]
-                                self.labels.append(code)
-                            except:
-                                continue
-        else:
-            i=0
-            for root, sub_folder, file_list in os.walk(data_dir):
-                for file_path in file_list:
-                    i+=1
-                    if i%5 == 2:
-                        image_name = os.path.join(root, file_path)
-                        if os.path.exists(image_name):
-                            try:
-                                im = io.imread(image_name,as_grey=True)
-                                im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
-                                self.image.append(im)
-                                code = image_name.split('/')[-1].split('.')[-2]
-                                code = [encode_maps[c] for c in list(code)]
-                                self.labels.append(code)
-                            except :
-                                continue
+                else:
+                    break
+        # self.image = []
+        # self.labels = []
+        # if istrain:
+        #     i=0
+        #     for root, sub_folder, file_list in os.walk(data_dir):
+        #         for file_path in file_list:
+        #             i+=1
+        #             if i%5 != 0:
+        #                 image_name = os.path.join(root, file_path)
+        #                 if os.path.exists(image_name):
+        #                     try:
+        #                         im = io.imread(image_name,as_grey=True)
+        #                         h = im.shape[0]
+        #                         l = im.shape[1]
+        #                         add = np.zeros((h,256-l)) + im[-1][-1]
+        #                         im = np.concatenate((im,add),axis = 1)
+
+        #                         #im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
+        #                         self.image.append(im)
+        #                         code = image_name.split('/')[-1].split('.')[-2]
+        #                         code = [encode_maps[c] for c in list(code)]
+        #                         self.labels.append(code)
+        #                     except:
+        #                         continue
+        # else:
+        #     i=0
+        #     for root, sub_folder, file_list in os.walk(data_dir):
+        #         for file_path in file_list:
+        #             i+=1
+        #             if i%5 == 2:
+        #                 image_name = os.path.join(root, file_path)
+        #                 if os.path.exists(image_name):
+        #                     try:
+        #                         im = io.imread(image_name,as_grey=True)
+        #                         h = im.shape[0]
+        #                         l = im.shape[1]
+        #                         add = np.zeros((h,256-l)) + im[-1][-1]
+        #                         im = np.concatenate((im,add),axis = 1)                                
+        #                         self.image.append(im)
+        #                         code = image_name.split('/')[-1].split('.')[-2]
+        #                         code = [encode_maps[c] for c in list(code)]
+        #                         self.labels.append(code)
+        #                     except :
+        #                         continue
 
     @property
     def size(self):
@@ -153,6 +182,29 @@ def accuracy_calculation(original_seq, decoded_seq, ignore_value=-1, isPrint=Fal
 
     return count * 1.0 / len(original_seq)
 
+def accuracy_calculation_single(original_seq, decoded_seq, ignore_value=-1, isPrint=False):
+    if len(original_seq) != len(decoded_seq):
+        print('original lengths is different from the decoded_seq, please check again')
+        return 0
+    count = 0
+    allcount = 0
+    for i, origin_label in enumerate(original_seq):
+        decoded_label = [j for j in decoded_seq[i] if j != ignore_value]
+        if isPrint and i < maxPrintLen:
+            # print('seq{0:4d}: origin: {1} decoded:{2}'.format(i, origin_label, decoded_label))
+
+            with open('./test.csv', 'w') as f:
+                f.write(str(origin_label) + '\t' + str(decoded_label))
+                f.write('\n')
+        tmp = min(len(origin_label),len(decoded_label))        
+        k = 0
+        while k < tmp and origin_label[k] == decoded_label[k]:
+            count += 1
+            k += 1
+
+        allcount += len(origin_label)
+
+    return count * 1.0 / allcount
 
 def sparse_tuple_from_label(sequences, dtype=np.int32):
     """Create a sparse representention of x.
