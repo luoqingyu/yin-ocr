@@ -83,7 +83,6 @@ class DataIterator:
                     self.image.append(im)
                     label = [encode_maps[c] for c in list(label)]
                     self.labels.append(label)
-                    print(label)
                     i+=1
                 else:
                     break

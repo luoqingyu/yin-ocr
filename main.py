@@ -13,7 +13,6 @@ import cnn_lstm_otc_ocr
 import utils
 import helper
 
-import matplotlib.pyplot as plt
 FLAGS = utils.FLAGS
 
 #os.environ['CUDA_VISIBLE_DEVICES']=FLAGS.gpu_idex 
