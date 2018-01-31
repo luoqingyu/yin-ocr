@@ -35,8 +35,8 @@ tf.app.flags.DEFINE_float('beta2', 0.999, 'adam parameter beta2')
 tf.app.flags.DEFINE_integer('decay_steps', 10000, 'the lr decay_step for optimizer')
 tf.app.flags.DEFINE_float('momentum', 0.9, 'the momentum')
 
-tf.app.flags.DEFINE_string('train_dir','../data/annotation_train.txt', 'the train data dir')
-tf.app.flags.DEFINE_string('val_dir','../data/annotation_val.txt', 'the val data dir')
+tf.app.flags.DEFINE_string('train_dir','./data/annotation_train.txt', 'the train data dir')
+tf.app.flags.DEFINE_string('val_dir','./data/annotation_val.txt', 'the val data dir')
 
 tf.app.flags.DEFINE_string('mode', 'train', 'train, val or infer')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'num of gpus')
