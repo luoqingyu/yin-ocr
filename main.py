@@ -15,7 +15,7 @@ import helper
 
 FLAGS = utils.FLAGS
 
-#os.environ['CUDA_VISIBLE_DEVICES']=FLAGS.gpu_idex 
+os.environ['CUDA_VISIBLE_DEVICES']=FLAGS.gpu_idex 
 logger = logging.getLogger('Traing for OCR using CNN+' + FLAGS.model +'+CTC')
 logger.setLevel(logging.INFO)
 
@@ -30,11 +30,11 @@ def train(train_dir=None, val_dir=None, mode='train'):
     #开始构建图
     model.build_graph()
     print('loading train data, please wait---------------------')
-    train_feeder = utils.DataIterator(data_dir=train_dir,num=4000000)
+    train_feeder = utils.DataIterator(data_dir=train_dir,num=1000)
     print('get image: ', train_feeder.size)
 
     print('loading validation data, please wait---------------------')
-    val_feeder = utils.DataIterator(data_dir=val_dir,num=40000)
+    val_feeder = utils.DataIterator(data_dir=val_dir,num=1000)
     print('get image: ', val_feeder.size)
 
     num_train_samples = train_feeder.size  
@@ -79,8 +79,9 @@ def train(train_dir=None, val_dir=None, mode='train'):
                 # the tracing part
                 for cur_batch in range(num_batches_per_epoch):
                     if (cur_batch + 1) % 100 == 0:
+                        print('num_batches_per_epoch',num_batches_per_epoch,'batchsize',FLAGS.batch_size)
                         print('batch', cur_batch, ': time', time.time() - batch_time)
-                    batch_time = time.time()
+                        batch_time = time.time()
 
                     #获得这一轮batch数据的标号
                     indexs = [shuffle_idx[i % num_train_samples] for i in

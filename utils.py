@@ -23,10 +23,10 @@ tf.app.flags.DEFINE_float('initial_learning_rate', 1e-3, 'inital lr')
 tf.app.flags.DEFINE_integer('image_height', 32, 'image height')
 tf.app.flags.DEFINE_integer('image_width', 256, 'image width')
 tf.app.flags.DEFINE_integer('image_channel', 1, 'image channels as input')
-tf.app.flags.DEFINE_integer('max_stepsize', 16, 'max stepsize in lstm, as well as '                                             'the output channels of last layer in CNN')
+tf.app.flags.DEFINE_integer('max_stepsize', 32, 'max stepsize in lstm, as well as '                                             'the output channels of last layer in CNN')
 tf.app.flags.DEFINE_integer('num_hidden', 256, 'number of hidden units in lstm')
 tf.app.flags.DEFINE_integer('num_epochs', 10000, 'maximum epochs')
-tf.app.flags.DEFINE_integer('batch_size', 2, 'the batch_size')
+tf.app.flags.DEFINE_integer('batch_size', 100, 'the batch_size')
 tf.app.flags.DEFINE_integer('save_steps', 1000, 'the step to save checkpoint')
 tf.app.flags.DEFINE_integer('validation_steps', 500, 'the step to validation')
 tf.app.flags.DEFINE_float('decay_rate', 0.98, 'the lr decay rate')
@@ -35,8 +35,8 @@ tf.app.flags.DEFINE_float('beta2', 0.999, 'adam parameter beta2')
 tf.app.flags.DEFINE_integer('decay_steps', 10000, 'the lr decay_step for optimizer')
 tf.app.flags.DEFINE_float('momentum', 0.9, 'the momentum')
 
-tf.app.flags.DEFINE_string('train_dir','./data/annotation_train.txt', 'the train data dir')
-tf.app.flags.DEFINE_string('val_dir','./data/annotation_val.txt', 'the val data dir')
+tf.app.flags.DEFINE_string('train_dir','/home/work/yts/data/annotation_train.txt', 'the train data dir')
+tf.app.flags.DEFINE_string('val_dir','/home/work/yts/data/annotation_val.txt', 'the val data dir')
 
 tf.app.flags.DEFINE_string('mode', 'train', 'train, val or infer')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'num of gpus')
@@ -69,21 +69,29 @@ class DataIterator:
         self.image = []
         self.labels = []
         i = 0
-        with open(data_dir) as f:
+        with open(data_dir,'r') as f:
             for u in f.readlines():
                 if i < num:
-                    now_path = "../data" + u.split(" ")[0][1:]
-                    label = now_path.split("_")[1]
-                    im = io.imread(now_path,as_grey=True)
-                    h = im.shape[0]
-                    l = im.shape[1]
-                    add = np.zeros((h,FLAGS.image_width-l)) + im[-1][-1]
-                    im = np.concatenate((im,add),axis = 1)
-                    im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
-                    self.image.append(im)
-                    label = [encode_maps[c] for c in list(label)]
-                    self.labels.append(label)
-                    i+=1
+                    try:
+                        now_path = "/home/work/yts/data" + u.split(" ")[0][1:]
+                        #print(now_path)
+                        label = now_path.split("_")[1]
+                        #print(label)
+                        im = io.imread(now_path,as_grey=True)
+                        h = im.shape[0]
+                        l = im.shape[1]
+                        if FLAGS.image_width-l>0:
+                            add = np.zeros((h,FLAGS.image_width-l)) + im[-1][-1]
+                            im = np.concatenate((im,add),axis = 1)
+                            im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
+                            #print(label)
+                            #print(im.shape)
+                            self.image.append(im)
+                            label = [encode_maps[c] for c in list(label)]
+                            self.labels.append(label)
+                            i+=1
+                    except:
+                        continue     
                 else:
                     break
         # self.image = []
